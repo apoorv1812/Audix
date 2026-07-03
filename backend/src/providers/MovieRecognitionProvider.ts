@@ -13,7 +13,7 @@ export class MovieRecognitionProvider {
 
     try {
       const genAI = new GoogleGenerativeAI(config.providers.gemini);
-      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
 
       // Convert images to generative parts
       const imageParts = framePaths.map(path => {
