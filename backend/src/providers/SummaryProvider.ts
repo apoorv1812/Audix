@@ -16,10 +16,7 @@ export class SummaryProvider {
     
     try {
       const genAI = new GoogleGenerativeAI(config.providers.gemini);
-      const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
-        generationConfig: { responseMimeType: 'application/json' }
-      });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const prompt = `
 You are an intelligent Video Understanding AI summarizing the context of a video.

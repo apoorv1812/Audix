@@ -13,10 +13,7 @@ export class SongRecognitionProvider {
     
     try {
       const genAI = new GoogleGenerativeAI(config.providers.gemini);
-      const model = genAI.getGenerativeModel({ 
-        model: 'gemini-1.5-flash',
-        generationConfig: { responseMimeType: 'application/json' }
-      });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       let audioData;
       try {
