@@ -6,7 +6,7 @@ interface AppContextType {
   appState: AppState;
   setAppState: (state: AppState) => void;
   progress: number;
-  setProgress: (progress: number) => void;
+  setProgress: React.Dispatch<React.SetStateAction<number>>;
   file: File | null;
   setFile: (file: File | null) => void;
   results: any | null;
