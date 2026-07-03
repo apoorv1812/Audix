@@ -11,7 +11,8 @@ router.get('/', async (req, res) => {
     }
     
     const genAI = new GoogleGenerativeAI(config.providers.gemini);
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const modelName = req.query.model ? String(req.query.model) : 'gemini-1.5-flash';
+    const model = genAI.getGenerativeModel({ model: modelName });
     
     const result = await model.generateContent("Hello, are you working?");
     return res.json({ success: true, response: result.response.text() });
