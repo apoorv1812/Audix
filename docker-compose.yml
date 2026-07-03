@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - SONG_PROVIDER_API_KEY=${SONG_PROVIDER_API_KEY:-}
+      - MOVIE_PROVIDER_API_KEY=${MOVIE_PROVIDER_API_KEY:-}
+      - SPEECH_PROVIDER_API_KEY=${SPEECH_PROVIDER_API_KEY:-}
+      - VISION_PROVIDER_API_KEY=${VISION_PROVIDER_API_KEY:-}
+      - SUMMARY_PROVIDER_API_KEY=${SUMMARY_PROVIDER_API_KEY:-}
+    volumes:
+      - ./backend/temp:/app/temp
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend

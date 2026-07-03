@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #09090B;
+    --card: #18181B;
+    --border: rgba(255, 255, 255, 0.1);
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-card/60 backdrop-blur-xl border border-white/10 shadow-2xl;
+  }
+  
+  .glass-card {
+    @apply bg-gradient-to-b from-card/80 to-background backdrop-blur-md border border-white/5 rounded-2xl shadow-xl transition-all duration-300;
+  }
+
+  .glass-card:hover {
+    @apply border-white/10 shadow-accent-blue/5;
+  }
+
+  .text-gradient {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#4F8CFF] to-[#7C3AED];
+  }
+}
+
+body {
+  background-color: var(--background);
+  background-image: 
+    radial-gradient(circle at 15% 50%, rgba(79, 140, 255, 0.08), transparent 25%),
+    radial-gradient(circle at 85% 30%, rgba(124, 58, 237, 0.08), transparent 25%);
+  background-attachment: fixed;
+  color: #FAFAFA;
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--background);
+}
+::-webkit-scrollbar-thumb {
+  background: #3f3f46;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #52525b;
+}
+
+/* Hide scrollbar for transcript but allow scroll */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+}
