@@ -52,7 +52,11 @@ export default function Uploader() {
         setProgress((p: number) => (p < 90 ? p + 10 : p));
       }, 500);
 
-      const response = await fetch('http://localhost:3001/api/analyze', {
+      const apiUrl = import.meta.env.VITE_API_URL 
+        ? `${import.meta.env.VITE_API_URL}/api/analyze` 
+        : 'http://localhost:3001/api/analyze';
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         body: formData
       });
