@@ -44,7 +44,7 @@ export class PipelineService {
       // Step 1: Extract Audio and Frames (in parallel)
       const [audioPath, framePaths] = await Promise.all([
         this.ffmpegService.extractAudio(videoPath, tempDir),
-        this.ffmpegService.extractFrames(videoPath, tempDir, 5)
+        this.ffmpegService.extractFrames(videoPath, tempDir, 3)
       ]);
 
       result.technicalDetails.extractedFrames = framePaths.length;

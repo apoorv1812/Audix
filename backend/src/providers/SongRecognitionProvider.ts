@@ -42,8 +42,8 @@ Return ONLY a valid JSON object matching this schema:
   "album": "<album name>"
 }
 
-If you are not absolutely sure about the song, return confidence below 90.
-Never guess the song. Never fabricate artist names.
+If you are unsure about the song, make your best guess.
+Never fabricate artist names if it's completely unrecognizable.
 Return ONLY valid JSON. No markdown blocks.`;
 
       logger.info('Calling Gemini API for Music Recognition');
@@ -58,8 +58,8 @@ Return ONLY valid JSON. No markdown blocks.`;
 
       try {
         const parsed = JSON.parse(match[0]) as SongResult;
-        if (parsed.confidence === undefined || parsed.confidence < 90) {
-          logger.info(`Song recognition confidence (${parsed.confidence}) below 90% threshold. Marking UNIDENTIFIED.`);
+        if (parsed.confidence === undefined || parsed.confidence < 20) {
+          logger.info(`Song recognition confidence (${parsed.confidence}) below 20% threshold. Marking UNIDENTIFIED.`);
           return { status: 'UNIDENTIFIED', confidence: parsed.confidence };
         }
         return parsed;

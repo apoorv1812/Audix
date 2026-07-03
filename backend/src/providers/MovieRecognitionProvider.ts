@@ -30,21 +30,22 @@ export class MovieRecognitionProvider {
 You are a highly accurate Movie/TV recognition AI. 
 I have provided extracted frames from a video clip ${transcriptText ? `and the transcript: "${transcriptText}"` : ''}.
 Your task is to identify the movie, TV show, or anime.
-If you are confident (confidence > 80) that you know what it is, return a JSON response matching this schema:
+Even if you are not completely sure, make your best guess.
+Return ONLY a valid JSON response matching this schema:
 {
   "status": "SUCCESS",
-  "confidence": <number between 80-100>,
+  "confidence": <number between 0-100>,
   "title": "<title>",
   "type": "<Movie | TV Show | Anime | Web Series | Documentary>"
 }
 
-If you are NOT confident, or if this is just a random non-movie video, you MUST return:
+If the frames are clearly just a random personal video with no recognizable media, return:
 {
   "status": "UNIDENTIFIED",
   "confidence": 0
 }
 
-Return ONLY valid JSON. No markdown formatting blocks around it. Do not guess or hallucinate.`;
+Return ONLY valid JSON. No markdown formatting blocks around it. Do not hallucinate titles for personal videos.`;
 
       logger.info('Calling Gemini API for Movie Recognition');
       const result = await model.generateContent([prompt, ...imageParts]);
