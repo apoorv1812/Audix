@@ -48,10 +48,16 @@ Return ONLY valid JSON. No markdown formatting blocks around it. Do not guess or
 
       logger.info('Calling Gemini API for Movie Recognition');
       const result = await model.generateContent([prompt, ...imageParts]);
-      const responseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+      const text = result.response.text();
+      const match = text.match(/\{[\s\S]*\}/);
+      
+      if (!match) {
+        logger.error('No JSON object found in Gemini response', text);
+        return { status: 'UNIDENTIFIED', confidence: 0 };
+      }
 
       try {
-        const parsed = JSON.parse(responseText) as MovieResult;
+        const parsed = JSON.parse(match[0]) as MovieResult;
         return parsed;
       } catch (parseError) {
         logger.error('Failed to parse Gemini response', parseError);

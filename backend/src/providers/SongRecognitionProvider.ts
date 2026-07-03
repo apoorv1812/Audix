@@ -48,10 +48,16 @@ Return ONLY valid JSON. No markdown blocks.`;
 
       logger.info('Calling Gemini API for Music Recognition');
       const result = await model.generateContent([prompt, audioPart]);
-      const responseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+      const text = result.response.text();
+      const match = text.match(/\{[\s\S]*\}/);
+
+      if (!match) {
+        logger.error('No JSON object found in Gemini response', text);
+        return { status: 'UNIDENTIFIED', confidence: 0 };
+      }
 
       try {
-        const parsed = JSON.parse(responseText) as SongResult;
+        const parsed = JSON.parse(match[0]) as SongResult;
         if (parsed.confidence === undefined || parsed.confidence < 90) {
           logger.info(`Song recognition confidence (${parsed.confidence}) below 90% threshold. Marking UNIDENTIFIED.`);
           return { status: 'UNIDENTIFIED', confidence: parsed.confidence };

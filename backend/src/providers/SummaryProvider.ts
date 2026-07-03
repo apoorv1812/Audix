@@ -39,10 +39,16 @@ No markdown blocks.`;
 
       logger.info('Calling Gemini API for Summary Generation');
       const result = await model.generateContent(prompt);
-      const responseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+      const text = result.response.text();
+      const match = text.match(/\{[\s\S]*\}/);
+
+      if (!match) {
+        logger.error('No JSON object found in Gemini response', text);
+        return { status: 'UNIDENTIFIED', confidence: 0 };
+      }
 
       try {
-        const parsed = JSON.parse(responseText) as SummaryResult;
+        const parsed = JSON.parse(match[0]) as SummaryResult;
         return parsed;
       } catch (parseError) {
         logger.error('Failed to parse Gemini response for summary', parseError);
