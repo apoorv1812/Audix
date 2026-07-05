@@ -27,10 +27,6 @@ export const analyzeVideo = async (req: Request, res: Response) => {
     const videoPath = req.file.path;
     logger.info(`Received video for analysis: ${req.file.originalname}`);
 
-    // Since Multer processes the file before this controller is hit, we cannot accurately
-    // measure the network upload time here. birthtimeMs is unreliable on Windows.
-    const uploadTimeMs = 0; 
-
     const fileHash = await hashFile(videoPath);
     logger.info(`Video hash: ${fileHash}`);
 
@@ -41,7 +37,7 @@ export const analyzeVideo = async (req: Request, res: Response) => {
       logger.info(`Cache hit for video: ${req.file.originalname}`);
       result = cachedResult;
     } else {
-      result = await pipelineService.processVideo(videoPath, uploadTimeMs);
+      result = await pipelineService.processVideo(videoPath);
       await analysisCache.set(fileHash, result);
     }
 

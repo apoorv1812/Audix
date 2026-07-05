@@ -5,7 +5,6 @@ import SongCard from './Results/SongCard';
 import MovieCard from './Results/MovieCard';
 import TranscriptCard from './Results/TranscriptCard';
 import SummaryCard from './Results/SummaryCard';
-import TechnicalDetailsCard from './Results/TechnicalDetailsCard';
 
 export default function ResultsDashboard() {
   const container = {
@@ -32,10 +31,10 @@ export default function ResultsDashboard() {
         animate="show"
         className="grid grid-cols-1 lg:grid-cols-3 gap-6"
       >
-        {/* Left Column: Video & Technical Details */}
+        {/* Left Column: Video & Transcript */}
         <div className="lg:col-span-1 space-y-6 flex flex-col">
           <VideoCard />
-          <TechnicalDetailsCard />
+          <TranscriptCard />
         </div>
 
         {/* Right Column: Insights */}
@@ -45,7 +44,6 @@ export default function ResultsDashboard() {
             <MovieCard />
           </div>
           <SummaryCard />
-          <TranscriptCard />
         </div>
       </motion.div>
     </div>

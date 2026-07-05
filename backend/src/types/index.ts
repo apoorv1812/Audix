@@ -11,7 +11,6 @@ export interface AnalysisResult {
   movie: MovieResult | null;
   transcript: TranscriptResult | null;
   summary: SummaryResult | null;
-  technicalDetails: TechnicalDetails;
 }
 
 export interface SongResult extends BaseResult {
@@ -58,12 +57,4 @@ export interface TranscriptResult extends BaseResult {
 
 export interface SummaryResult extends BaseResult {
   text?: string;
-}
-
-export interface TechnicalDetails {
-  processingTimeMs: number;
-  extractedFrames: number;
-  audioDurationSeconds: number;
-  apiProvidersUsed: string[];
-  pipelineTimes?: Record<string, number>;
 }
