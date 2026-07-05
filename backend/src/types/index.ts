@@ -1,4 +1,4 @@
-export type ProviderStatus = 'SUCCESS' | 'NOT_CONFIGURED' | 'UNIDENTIFIED' | 'ERROR' | 'UNSUPPORTED_PROVIDER' | 'PROVIDER_UNAVAILABLE';
+export type ProviderStatus = 'SUCCESS' | 'NOT_CONFIGURED' | 'UNIDENTIFIED' | 'ERROR' | 'UNSUPPORTED_PROVIDER' | 'PROVIDER_UNAVAILABLE' | 'TIMEOUT';
 
 export interface BaseResult {
   status: ProviderStatus;
@@ -45,6 +45,9 @@ export interface MovieMetadataResult extends BaseResult {
 export interface MovieResult extends BaseResult {
   title?: string;
   type?: 'Movie' | 'TV Show' | 'Anime' | 'Web Series' | 'Documentary';
+  sceneDescription?: string;
+  objects?: string[];
+  ocr?: string;
   metadata?: MovieMetadataResult;
 }
 
@@ -62,4 +65,5 @@ export interface TechnicalDetails {
   extractedFrames: number;
   audioDurationSeconds: number;
   apiProvidersUsed: string[];
+  pipelineTimes?: Record<string, number>;
 }

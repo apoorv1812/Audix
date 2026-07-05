@@ -10,13 +10,17 @@ interface CacheItem<T> {
 export class Cache {
   private cacheDir: string;
   private ttlMs: number;
+  private initPromise: Promise<void> | null = null;
 
   constructor(ttlHours: number = 24) {
     this.ttlMs = ttlHours * 60 * 60 * 1000;
     this.cacheDir = path.join(process.cwd(), '.cache');
-    if (!fs.existsSync(this.cacheDir)) {
-      fs.mkdirSync(this.cacheDir, { recursive: true });
-    }
+  }
+
+  private async ensureDir() {
+    if (this.initPromise) return this.initPromise;
+    this.initPromise = fs.promises.mkdir(this.cacheDir, { recursive: true }).then(() => {});
+    return this.initPromise;
   }
 
   private getFilePath(key: string): string {
@@ -25,19 +29,23 @@ export class Cache {
   }
 
   async get<T>(key: string): Promise<T | null> {
+    await this.ensureDir();
     const filePath = this.getFilePath(key);
-    if (!fs.existsSync(filePath)) {
+    
+    try {
+      await fs.promises.access(filePath);
+    } catch {
       logger.info(`Cache miss for key: ${key}`);
       return null;
     }
 
     try {
-      const content = fs.readFileSync(filePath, 'utf-8');
+      const content = await fs.promises.readFile(filePath, 'utf-8');
       const item: CacheItem<T> = JSON.parse(content);
 
       if (Date.now() - item.timestamp > this.ttlMs) {
         logger.info(`Cache expired for key: ${key}`);
-        fs.unlinkSync(filePath);
+        await fs.promises.rm(filePath, { force: true });
         return null;
       }
 
@@ -50,13 +58,14 @@ export class Cache {
   }
 
   async set<T>(key: string, data: T): Promise<void> {
+    await this.ensureDir();
     const filePath = this.getFilePath(key);
     const item: CacheItem<T> = {
       data,
       timestamp: Date.now()
     };
     try {
-      fs.writeFileSync(filePath, JSON.stringify(item), 'utf-8');
+      await fs.promises.writeFile(filePath, JSON.stringify(item), 'utf-8');
     } catch (error) {
       logger.error(`Error writing cache for key: ${key}`, error);
     }
