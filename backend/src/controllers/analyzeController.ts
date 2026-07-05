@@ -27,12 +27,9 @@ export const analyzeVideo = async (req: Request, res: Response) => {
     const videoPath = req.file.path;
     logger.info(`Received video for analysis: ${req.file.originalname}`);
 
-    // Estimate upload time
-    let uploadTimeMs = 0;
-    try {
-      const stats = await fs.promises.stat(videoPath);
-      uploadTimeMs = Math.max(0, Date.now() - stats.birthtimeMs);
-    } catch {}
+    // Since Multer processes the file before this controller is hit, we cannot accurately
+    // measure the network upload time here. birthtimeMs is unreliable on Windows.
+    const uploadTimeMs = 0; 
 
     const fileHash = await hashFile(videoPath);
     logger.info(`Video hash: ${fileHash}`);

@@ -1,7 +1,6 @@
-import { config } from '../config/env';
 import { SummaryResult, SongResult, MovieResult, TranscriptResult } from '../types';
 import { logger } from '../utils/logger';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { getGeminiModel } from '../config/gemini';
 
 export class SummaryProvider {
   async generateSummary(
@@ -9,15 +8,12 @@ export class SummaryProvider {
     movie: MovieResult | null, 
     transcript: TranscriptResult | null
   ): Promise<SummaryResult> {
-    if (!config.providers.gemini) {
-      logger.warn('Gemini API key is not configured for SummaryProvider.');
+    const model = getGeminiModel();
+    if (!model) {
       return { status: 'NOT_CONFIGURED', message: 'Configure your AI provider.' };
     }
     
     try {
-      const genAI = new GoogleGenerativeAI(config.providers.gemini);
-      const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash' });
-
       const prompt = `
 You are an intelligent Video Understanding AI summarizing the context of a video.
 I have used other AI providers to extract the following metadata from the video:
