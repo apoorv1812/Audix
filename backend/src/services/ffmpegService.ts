@@ -29,43 +29,32 @@ export class FFmpegService {
 
         const framePaths = timestamps.map((_, i) => path.join(outputDir, `frame-${i + 1}.jpg`));
         
-        const command = ffmpeg();
+        const command = ffmpeg(videoPath);
 
-        // 1. Add inputs with fast-seek (-ss BEFORE -i) for each frame
-        timestamps.forEach(t => {
-          command.input(videoPath).inputOptions([`-ss ${t.toFixed(3)}`]);
-        });
-        
-        // 2. Add one final input for the full audio extraction
-        command.input(videoPath);
-        const audioInputIndex = timestamps.length;
+        // Output 1: Audio
+        command
+          .output(audioPath)
+          .noVideo()
+          .audioCodec('libmp3lame')
+          .audioChannels(1)
+          .audioBitrate('64k');
+          // No heavy audio filters (loudnorm, silenceremove) as they cause massive buffering latency
 
-        // 3. Map frame inputs to outputs
+        // Outputs 2-5: Frames
         timestamps.forEach((t, i) => {
           command
             .output(framePaths[i])
             .outputOptions([
-              `-map ${i}:v:0`, // take video stream from this specific input
+              `-ss ${t.toFixed(3)}`,
               '-vframes 1',
               '-vf scale=-1:720',
               '-q:v 5'
             ]);
         });
 
-        // 4. Map final input to audio output
-        command
-          .output(audioPath)
-          .outputOptions([
-            `-map ${audioInputIndex}:a:0?`, // ? means optional (won't crash if no audio)
-            '-c:a libmp3lame',
-            '-ac 1',
-            '-b:a 64k'
-            // Removed silenceremove and loudnorm as they force full stream buffering and cause massive delays
-          ]);
-
         command
           .on('end', () => {
-            logger.info(`Extracted audio and frames to ${outputDir} instantly using fast-seek multi-input`);
+            logger.info(`Extracted audio and frames to ${outputDir} in one pass safely`);
             resolve({ audioPath, framePaths });
           })
           .on('error', (err) => {

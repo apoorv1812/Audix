@@ -33,9 +33,14 @@ class CombinedRecognitionService {
     }
 
     try {
-      // Read audio
-      const audioData = await fs.promises.readFile(audioFilePath, { encoding: 'base64' });
-      const audioPart = { inlineData: { data: audioData, mimeType: 'audio/mp3' } };
+      // Read audio safely
+      let audioPart;
+      try {
+        const audioData = await fs.promises.readFile(audioFilePath, { encoding: 'base64' });
+        audioPart = { inlineData: { data: audioData, mimeType: 'audio/mp3' } };
+      } catch (err) {
+        logger.warn(`Could not read audio file: ${audioFilePath}. Assuming no audio.`);
+      }
 
       // Read images
       const imageParts = await Promise.all(
@@ -49,7 +54,7 @@ class CombinedRecognitionService {
 
       const prompt = `
 You are a highly accurate Video Understanding AI.
-Analyze the provided video frames and audio.
+Analyze the provided video frames and audio (if any).
 Extract the following information and return it in a single JSON object matching this schema EXACTLY:
 {
   "transcript": {
@@ -82,7 +87,11 @@ Rules:
 `;
 
       logger.info('Calling Gemini API for Combined Recognition (Request #1)');
-      const result = await model.generateContent([prompt, audioPart, ...imageParts]);
+      const parts: any[] = [prompt];
+      if (audioPart) parts.push(audioPart);
+      parts.push(...imageParts);
+
+      const result = await model.generateContent(parts);
       const text = result.response.text();
       const match = text.match(/\{[\s\S]*\}/);
 
