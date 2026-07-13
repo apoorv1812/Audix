@@ -1,6 +1,6 @@
 import { IProvider } from '../../core/interfaces/IProvider';
 import { PipelineContext, MovieResult, ProviderStatus } from '../../core/types';
-import { getGeminiModel } from '../../config/gemini';
+import { geminiConfig } from '../../config/gemini';
 import { logger } from '../../utils/logger';
 import fs from 'fs/promises';
 
@@ -9,7 +9,7 @@ export class GeminiMovieProvider implements IProvider<MovieResult> {
   private _status: ProviderStatus = 'PENDING';
 
   async initialize(): Promise<void> {
-    const model = getGeminiModel();
+    const model = geminiConfig.getVisionModel();
     if (!model) {
       this._status = 'NOT_CONFIGURED';
     } else {
@@ -23,12 +23,17 @@ export class GeminiMovieProvider implements IProvider<MovieResult> {
 
     if (this._status === 'NOT_CONFIGURED') {
       logger.warn(`[${this.name}] Provider not configured`);
-      return { status: 'NOT_CONFIGURED' };
+      return { 
+        status: 'NOT_CONFIGURED',
+        provider: this.name,
+        processingTime: Date.now() - startTime,
+        reason: 'Gemini API not configured'
+      };
     }
 
     try {
-      const model = getGeminiModel();
-      if (!model) throw new Error('Model not initialized');
+      const model = geminiConfig.getVisionModel();
+      if (!model) throw new Error('Vision Model not initialized');
 
       // Movie recognition only analyzes images (4 optimized frames)
       const imageParts = await Promise.all(
@@ -45,6 +50,7 @@ You are a highly accurate Visual Recognition AI.
 Analyze the provided video frames. 
 Determine if these frames belong to a recognizable Movie, TV Show, Anime, Web Series, or Documentary.
 DO NOT use any external knowledge about audio or transcripts. Just look at the visual information.
+Estimate your confidence naturally based on how recognizable the frames are.
 Return ONLY valid JSON matching this schema exactly:
 {
   "status": "SUCCESS" | "UNIDENTIFIED",
@@ -52,28 +58,38 @@ Return ONLY valid JSON matching this schema exactly:
   "title": "<movie/TV show title guess>",
   "type": "Movie" | "TV Show" | "Anime" | "Web Series" | "Documentary"
 }
-If you cannot identify the movie, set status to "UNIDENTIFIED" and confidence to 0. Do not invent titles.
+If you truly cannot identify any recognizable media, set status to "UNIDENTIFIED". Do not invent titles.
 `;
 
       const result = await model.generateContent([prompt, ...imageParts]);
       const text = result.response.text();
-      const match = text.match(/\{[\s\S]*\}/);
-
-      if (!match) {
-        throw new Error('Invalid JSON response');
+      
+      let parsed: MovieResult;
+      try {
+        parsed = JSON.parse(text) as MovieResult;
+      } catch (e) {
+        throw new Error(`Failed to parse JSON response: ${text}`);
       }
-
-      const parsed = JSON.parse(match[0]) as MovieResult;
-      parsed.provider = this.name;
       
       const duration = Date.now() - startTime;
       logger.info(`[${this.name}] Finished analysis in ${duration}ms with status: ${parsed.status}`);
       
-      return parsed;
+      return {
+        ...parsed,
+        provider: this.name,
+        processingTime: duration,
+        model: 'gemini-1.5-flash'
+      };
     } catch (error: any) {
       const duration = Date.now() - startTime;
       logger.error(`[${this.name}] Error after ${duration}ms`, error);
-      return { status: 'ERROR', message: error.message };
+      return { 
+        status: 'ERROR', 
+        provider: this.name,
+        error: error.message || String(error),
+        reason: 'Exception during Gemini API call or parsing',
+        processingTime: duration
+      };
     }
   }
 

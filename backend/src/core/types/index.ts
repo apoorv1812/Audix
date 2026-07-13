@@ -1,9 +1,16 @@
-export type ProviderStatus = 'SUCCESS' | 'NOT_CONFIGURED' | 'UNIDENTIFIED' | 'ERROR' | 'UNSUPPORTED_PROVIDER' | 'PROVIDER_UNAVAILABLE' | 'TIMEOUT' | 'PENDING';
+export type ProviderStatus = 'SUCCESS' | 'NOT_CONFIGURED' | 'UNIDENTIFIED' | 'ERROR' | 'UNSUPPORTED_PROVIDER' | 'PROVIDER_UNAVAILABLE' | 'TIMEOUT' | 'PENDING' | 'NOT_SUPPORTED';
 
 export interface BaseResult {
   status: ProviderStatus;
-  message?: string;
+  provider?: string;
   confidence?: number;
+  processingTime?: number;
+  tokensUsed?: number;
+  reason?: string;
+  error?: string;
+  model?: string;
+  requestId?: string;
+  message?: string;
 }
 
 export interface PipelineContext {

@@ -13,7 +13,12 @@ export class TVMazeMetadataProvider implements IProvider<MovieMetadataResult> {
     logger.info(`[${this.name}] Starting analysis`);
 
     if (!context.state.movie || context.state.movie.status !== 'SUCCESS' || !context.state.movie.title) {
-      return { status: 'UNIDENTIFIED', message: 'No valid movie title provided' };
+      return { 
+        status: 'UNIDENTIFIED', 
+        provider: this.name,
+        processingTime: Date.now() - startTime,
+        reason: 'No valid movie title provided' 
+      };
     }
 
     const title = context.state.movie.title;
@@ -22,7 +27,9 @@ export class TVMazeMetadataProvider implements IProvider<MovieMetadataResult> {
     if (type !== 'TV Show') {
       return {
         status: 'UNSUPPORTED_PROVIDER',
-        message: 'Current metadata provider supports TV shows only.'
+        provider: this.name,
+        processingTime: Date.now() - startTime,
+        reason: 'Current metadata provider supports TV shows only.'
       };
     }
 
@@ -35,14 +42,25 @@ export class TVMazeMetadataProvider implements IProvider<MovieMetadataResult> {
       if (!response.ok) {
         if (response.status === 404) {
           logger.warn(`[${this.name}] TVMaze returned 404 for ${title}`);
-          return { status: 'UNIDENTIFIED' };
+          return { 
+            status: 'UNIDENTIFIED',
+            provider: this.name,
+            processingTime: Date.now() - startTime,
+            reason: 'Show not found on TVMaze'
+          };
         }
         logger.error(`[${this.name}] API error: ${response.status} ${response.statusText}`);
-        return { status: 'PROVIDER_UNAVAILABLE' };
+        return { 
+          status: 'PROVIDER_UNAVAILABLE',
+          provider: this.name,
+          processingTime: Date.now() - startTime,
+          reason: `TVMaze API returned ${response.status}`
+        };
       }
 
       const data = await response.json();
       
+      const duration = Date.now() - startTime;
       const result: MovieMetadataResult = {
         status: 'SUCCESS',
         imdbRating: data.rating?.average?.toString(),
@@ -52,17 +70,24 @@ export class TVMazeMetadataProvider implements IProvider<MovieMetadataResult> {
         poster: data.image?.original || data.image?.medium,
         network: data.network?.name || data.webChannel?.name,
         officialUrl: data.officialSite,
-        providerName: 'TVMaze'
+        providerName: 'TVMaze',
+        provider: this.name,
+        processingTime: duration
       };
 
-      const duration = Date.now() - startTime;
       logger.info(`[${this.name}] Finished analysis in ${duration}ms with status: ${result.status}`);
       
       return result;
     } catch (error: any) {
       const duration = Date.now() - startTime;
       logger.error(`[${this.name}] Error after ${duration}ms`, error);
-      return { status: 'PROVIDER_UNAVAILABLE', message: error.message };
+      return { 
+        status: 'PROVIDER_UNAVAILABLE', 
+        provider: this.name,
+        processingTime: duration,
+        error: error.message || String(error),
+        reason: 'Exception calling TVMaze API'
+      };
     }
   }
 

@@ -1,6 +1,6 @@
 import { IProvider } from '../../core/interfaces/IProvider';
 import { PipelineContext, TranscriptResult, ProviderStatus } from '../../core/types';
-import { getGeminiModel } from '../../config/gemini';
+import { geminiConfig } from '../../config/gemini';
 import { logger } from '../../utils/logger';
 import fs from 'fs/promises';
 
@@ -9,7 +9,7 @@ export class GeminiSpeechProvider implements IProvider<TranscriptResult> {
   private _status: ProviderStatus = 'PENDING';
 
   async initialize(): Promise<void> {
-    const model = getGeminiModel();
+    const model = geminiConfig.getTextModel();
     if (!model) {
       this._status = 'NOT_CONFIGURED';
     } else {
@@ -23,12 +23,17 @@ export class GeminiSpeechProvider implements IProvider<TranscriptResult> {
 
     if (this._status === 'NOT_CONFIGURED') {
       logger.warn(`[${this.name}] Provider not configured`);
-      return { status: 'NOT_CONFIGURED' };
+      return { 
+        status: 'NOT_CONFIGURED',
+        provider: this.name,
+        processingTime: Date.now() - startTime,
+        reason: 'Gemini API not configured'
+      };
     }
 
     try {
-      const model = getGeminiModel();
-      if (!model) throw new Error('Model not initialized');
+      const model = geminiConfig.getTextModel();
+      if (!model) throw new Error('Text Model not initialized');
 
       let audioPart;
       try {
@@ -36,13 +41,19 @@ export class GeminiSpeechProvider implements IProvider<TranscriptResult> {
         audioPart = { inlineData: { data: audioData, mimeType: 'audio/mp3' } };
       } catch (err) {
         logger.warn(`[${this.name}] Could not read audio file: ${context.audioPath}`);
-        return { status: 'UNIDENTIFIED', message: 'No audio found' };
+        return { 
+          status: 'ERROR', 
+          provider: this.name,
+          processingTime: Date.now() - startTime,
+          reason: 'No audio found' 
+        };
       }
 
       const prompt = `
 You are a highly accurate Audio Transcription AI.
 Listen to the provided audio.
 Transcribe the speech and detect the language. Do NOT provide any movie details or song details.
+Provide a natural confidence score based on the clarity of the speech.
 Return ONLY valid JSON matching this schema exactly:
 {
   "status": "SUCCESS" | "UNIDENTIFIED",
@@ -51,27 +62,38 @@ Return ONLY valid JSON matching this schema exactly:
   "language": "<detected language>",
   "speakerCount": <estimated number of speakers>
 }
-If there is no speech, set status to "UNIDENTIFIED".
+If there is absolutely no speech, set status to "UNIDENTIFIED".
 `;
 
       const result = await model.generateContent([prompt, audioPart]);
       const text = result.response.text();
-      const match = text.match(/\{[\s\S]*\}/);
-
-      if (!match) {
-        throw new Error('Invalid JSON response');
+      
+      let parsed: TranscriptResult;
+      try {
+        parsed = JSON.parse(text) as TranscriptResult;
+      } catch (e) {
+        throw new Error(`Failed to parse JSON response: ${text}`);
       }
-
-      const parsed = JSON.parse(match[0]) as TranscriptResult;
       
       const duration = Date.now() - startTime;
       logger.info(`[${this.name}] Finished analysis in ${duration}ms with status: ${parsed.status}`);
       
-      return parsed;
+      return {
+        ...parsed,
+        provider: this.name,
+        processingTime: duration,
+        model: 'gemini-1.5-flash'
+      };
     } catch (error: any) {
       const duration = Date.now() - startTime;
       logger.error(`[${this.name}] Error after ${duration}ms`, error);
-      return { status: 'ERROR', message: error.message };
+      return { 
+        status: 'ERROR', 
+        provider: this.name,
+        error: error.message || String(error),
+        reason: 'Exception during Gemini API call or parsing',
+        processingTime: duration 
+      };
     }
   }
 

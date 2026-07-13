@@ -1,8 +1,11 @@
 import { Router } from 'express';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from '../config/env';
+import { getLatestDebugRun } from '../controllers/debugController';
 
 const router = Router();
+
+router.get('/latest', getLatestDebugRun);
 
 router.get('/', async (req, res) => {
   try {

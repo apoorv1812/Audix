@@ -2,21 +2,47 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from './env';
 import { logger } from '../utils/logger';
 
-// Instantiate once to reuse connections
-let genAIInstance: GoogleGenerativeAI | null = null;
-let modelInstance: any = null;
+class GeminiConfig {
+  private genAIInstance: GoogleGenerativeAI | null = null;
+  // Use the latest stable model supported by the SDK
+  private readonly defaultModel = 'gemini-1.5-flash';
 
-export const getGeminiModel = () => {
-  if (!config.providers.gemini) {
-    logger.warn('Gemini API key is not configured.');
-    return null;
+  private getInstance(): GoogleGenerativeAI | null {
+    if (!config.providers.gemini) {
+      logger.warn('Gemini API key is not configured.');
+      return null;
+    }
+    if (!this.genAIInstance) {
+      this.genAIInstance = new GoogleGenerativeAI(config.providers.gemini);
+      logger.info('Initialized global Gemini client');
+    }
+    return this.genAIInstance;
   }
-  
-  if (!genAIInstance) {
-    genAIInstance = new GoogleGenerativeAI(config.providers.gemini);
-    modelInstance = genAIInstance.getGenerativeModel({ model: 'gemini-3.5-flash' });
-    logger.info('Initialized global Gemini client');
+
+  private getModelWithConfig(modelName: string) {
+    const instance = this.getInstance();
+    if (!instance) return null;
+    return instance.getGenerativeModel({
+      model: modelName,
+      generationConfig: {
+        responseMimeType: 'application/json'
+      }
+    });
   }
-  
-  return modelInstance;
-};
+
+  getVisionModel() {
+    return this.getModelWithConfig(this.defaultModel);
+  }
+
+  getTextModel() {
+    return this.getModelWithConfig(this.defaultModel);
+  }
+
+  getOCRModel() {
+    return this.getModelWithConfig(this.defaultModel);
+  }
+}
+
+export const geminiConfig = new GeminiConfig();
+// Provide a backward-compatible getGeminiModel for any unmigrated usages (if needed)
+export const getGeminiModel = () => geminiConfig.getTextModel();

@@ -9,11 +9,13 @@ export interface ProcessMediaResult {
     duration: number;
     format: string;
     bitrate: number;
+    processingTimeMs: number;
   };
 }
 
 export class FFmpegService {
   async processMedia(videoPath: string, outputDir: string): Promise<ProcessMediaResult> {
+    const startTime = Date.now();
     const fileName = path.basename(videoPath, path.extname(videoPath));
     const audioPath = path.join(outputDir, `${fileName}.mp3`);
     
@@ -39,7 +41,7 @@ export class FFmpegService {
         
         const command = ffmpeg(videoPath);
 
-        // Output 1: Audio (Mono, 64kbps, normalize volume if possible, trim silence requires complex filters which we avoid for latency, but we keep it simple as requested)
+        // Output 1: Audio (Mono, 64kbps)
         command
           .output(audioPath)
           .noVideo()
@@ -48,33 +50,42 @@ export class FFmpegService {
           .audioBitrate('64k');
 
         // Outputs 2-5: Frames
+        const frameResolution = '-1:720';
         timestamps.forEach((t, i) => {
           command
             .output(framePaths[i])
             .outputOptions([
               `-ss ${t.toFixed(3)}`,
               '-vframes 1',
-              '-vf scale=-1:720',
+              `-vf scale=${frameResolution}`,
               '-q:v 5'
             ]);
         });
 
         command
           .on('end', () => {
-            logger.info(`Extracted audio and frames to ${outputDir} in one pass safely`);
+            const processingTimeMs = Date.now() - startTime;
+            logger.info(`FFmpeg Extraction Complete:
+  Audio Path: ${audioPath}
+  Frame Count: ${framePaths.length}
+  Frame Resolution: ${frameResolution}
+  Video Duration: ${duration}s
+  Execution Time: ${processingTimeMs}ms`);
+            
             resolve({ 
               audioPath, 
               framePaths,
               metadata: {
                 duration,
                 format,
-                bitrate
+                bitrate,
+                processingTimeMs
               }
             });
           })
           .on('error', (err) => {
             logger.error(`Error processing media from ${videoPath}`, err);
-            reject(err);
+            reject(err); // Ensure pipeline halts
           })
           .run();
       });

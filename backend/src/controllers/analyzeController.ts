@@ -48,9 +48,13 @@ export const analyzeVideo = async (req: Request, res: Response) => {
     }
 
     // Execute via ProcessingManager to prevent duplicate work and limit concurrency
-    const result = await processingManager.executeJob(fileHash, async () => {
+    const processRes = await processingManager.executeJob(fileHash, async () => {
       return await pipelineService.processVideo(videoPath);
     });
+
+    const result = processRes.result;
+    const pipelineTimes = processRes.pipelineTimes;
+    pipelineTimes.upload = Date.now() - startTime - pipelineTimes.totalPipeline;
 
     const processingDurationMs = Date.now() - startTime;
 
@@ -70,6 +74,9 @@ export const analyzeVideo = async (req: Request, res: Response) => {
       success: true,
       message: 'Video analyzed successfully.',
       data: result,
+      technicalDetails: {
+        pipelineTimes
+      },
       meta: {
         processingDurationMs
       }

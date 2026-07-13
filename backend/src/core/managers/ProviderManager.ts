@@ -95,7 +95,7 @@ export class ProviderManager {
 
     return {
       movie: context.state.movie || null,
-      speech: context.state.speech || null,
+      transcript: context.state.speech || null,
       ocr: context.state.ocr || null,
       song: context.state.music || null,
       summary: summary as any || null
