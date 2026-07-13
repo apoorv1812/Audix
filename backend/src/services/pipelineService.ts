@@ -5,6 +5,7 @@ import { debugManager, DebugRun } from '../core/managers/DebugManager';
 import { logger } from '../utils/logger';
 import fs from 'fs/promises';
 import path from 'path';
+import os from 'os';
 
 export class PipelineService {
   private ffmpegService = new FFmpegService();
@@ -18,7 +19,7 @@ export class PipelineService {
 
   async processVideo(videoPath: string): Promise<{ result: AnalysisResult, pipelineTimes: any }> {
     const pipelineStartTime = Date.now();
-    const tempDir = path.join(process.cwd(), 'temp', path.basename(videoPath, path.extname(videoPath)));
+    const tempDir = path.join(os.tmpdir(), 'audix-pipeline', path.basename(videoPath, path.extname(videoPath)));
     await fs.mkdir(tempDir, { recursive: true });
 
     let errors: any[] = [];

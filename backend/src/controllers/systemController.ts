@@ -6,6 +6,7 @@ import { exec } from 'child_process';
 import util from 'util';
 import fs from 'fs/promises';
 import path from 'path';
+import os from 'os';
 
 const execPromise = util.promisify(exec);
 const VERSION = '1.0.0-enterprise';
@@ -40,7 +41,7 @@ export const getHealth = async (req: Request, res: Response) => {
 
     // 3. Temp Directory
     try {
-      const tempPath = path.join(process.cwd(), 'temp');
+      const tempPath = path.join(os.tmpdir(), 'audix-healthcheck');
       await fs.mkdir(tempPath, { recursive: true });
       await fs.access(tempPath, fs.constants.W_OK);
       healthDetails.tempDir = 'OK';

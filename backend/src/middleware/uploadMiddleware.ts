@@ -1,8 +1,9 @@
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import os from 'os';
 
-const tempDir = path.join(process.cwd(), 'temp', 'uploads');
+const tempDir = path.join(os.tmpdir(), 'audix-uploads');
 
 if (!fs.existsSync(tempDir)) {
   fs.mkdirSync(tempDir, { recursive: true });
