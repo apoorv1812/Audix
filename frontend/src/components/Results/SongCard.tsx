@@ -16,11 +16,13 @@ export default function SongCard() {
     );
   }
 
-  if (song.status === 'UNIDENTIFIED' || song.status === 'ERROR') {
+  if (song.status === 'UNIDENTIFIED' || song.status === 'ERROR' || song.status === 'TIMEOUT') {
     return (
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} className="glass-card p-6 relative overflow-hidden group h-full flex flex-col justify-center items-center text-center">
         <AlertCircle className="w-12 h-12 text-yellow-500/50 mb-4" />
-        <h3 className="font-semibold text-zinc-400">Song could not be identified.</h3>
+        <h3 className="font-semibold text-zinc-400">
+          {song.status === 'TIMEOUT' ? 'Analysis Timed Out' : 'Song could not be identified.'}
+        </h3>
       </motion.div>
     );
   }

@@ -4,6 +4,7 @@ import { config } from './config/env';
 import { logger } from './utils/logger';
 import analyzeRoutes from './routes/analyze';
 import debugRoutes from './routes/debug';
+import systemRoutes from './routes/system';
 
 const app = express();
 
@@ -14,6 +15,7 @@ app.use(express.json());
 // Routes
 app.use('/api/analyze', analyzeRoutes);
 app.use('/api/debug', debugRoutes);
+app.use('/api', systemRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

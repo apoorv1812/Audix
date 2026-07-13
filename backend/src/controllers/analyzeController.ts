@@ -1,12 +1,12 @@
 import { Request, Response } from 'express';
 import { PipelineService } from '../services/pipelineService';
 import { logger } from '../utils/logger';
-import { Cache } from '../utils/cache';
 import crypto from 'crypto';
 import fs from 'fs';
+import { processingManager } from '../core/managers/ProcessingManager';
+import { analysisRepository, AnalysisRecord } from '../core/repositories/AnalysisRepository';
 
 const pipelineService = new PipelineService();
-const analysisCache = new Cache(24);
 
 const hashFile = async (filePath: string): Promise<string> => {
   return new Promise((resolve, reject) => {
@@ -19,6 +19,8 @@ const hashFile = async (filePath: string): Promise<string> => {
 };
 
 export const analyzeVideo = async (req: Request, res: Response) => {
+  const startTime = Date.now();
+  
   try {
     if (!req.file) {
       return res.status(400).json({ error: 'No video file provided.' });
@@ -30,37 +32,55 @@ export const analyzeVideo = async (req: Request, res: Response) => {
     const fileHash = await hashFile(videoPath);
     logger.info(`Video hash: ${fileHash}`);
 
-    const cachedResult = await analysisCache.get(fileHash);
-    let result;
+    const cachedRecord = await analysisRepository.findByHash(fileHash);
 
-    if (cachedResult) {
+    if (cachedRecord) {
       logger.info(`Cache hit for video: ${req.file.originalname}`);
-      result = cachedResult;
-    } else {
-      result = await pipelineService.processVideo(videoPath);
-      await analysisCache.set(fileHash, result);
+      
+      // Async cleanup
+      try { await fs.promises.unlink(videoPath); } catch (err) {}
+
+      return res.status(200).json({
+        success: true,
+        message: 'Video analyzed successfully (from cache).',
+        data: cachedRecord.result
+      });
     }
+
+    // Execute via ProcessingManager to prevent duplicate work and limit concurrency
+    const result = await processingManager.executeJob(fileHash, async () => {
+      return await pipelineService.processVideo(videoPath);
+    });
+
+    const processingDurationMs = Date.now() - startTime;
+
+    // Save to repository
+    const record: AnalysisRecord = {
+      hash: fileHash,
+      result,
+      createdAt: new Date(),
+      processingDurationMs
+    };
+    await analysisRepository.save(record);
 
     // Async cleanup
-    try {
-      await fs.promises.unlink(videoPath);
-    } catch (err) {
-      logger.warn(`Failed to delete original video: ${videoPath}`);
-    }
+    try { await fs.promises.unlink(videoPath); } catch (err) {}
 
     return res.status(200).json({
       success: true,
       message: 'Video analyzed successfully.',
-      data: result
+      data: result,
+      meta: {
+        processingDurationMs
+      }
     });
+
   } catch (error: any) {
     logger.error('Error in analyzeController', error);
     
     // Async cleanup if failed
     if (req.file) {
-      try {
-        await fs.promises.unlink(req.file.path);
-      } catch (e) {}
+      try { await fs.promises.unlink(req.file.path); } catch (e) {}
     }
 
     return res.status(500).json({

@@ -25,12 +25,18 @@ export default function TranscriptCard() {
     );
   }
 
-  if (transcript.status === 'UNIDENTIFIED' || transcript.status === 'ERROR' || !transcript.dialogue) {
+  if (transcript.status === 'UNIDENTIFIED' || transcript.status === 'ERROR' || transcript.status === 'TIMEOUT' || !transcript.dialogue) {
     return (
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} className="glass-card p-6 flex flex-col justify-center items-center text-center h-[200px]">
         <AlertCircle className="w-8 h-8 text-yellow-500/50 mb-2" />
-        <h3 className="font-semibold text-zinc-400">No Speech Detected</h3>
-        <p className="text-xs text-zinc-500 mt-2">No dialogue or transcript could be identified in this video.</p>
+        <h3 className="font-semibold text-zinc-400">
+          {transcript.status === 'TIMEOUT' ? 'Analysis Timed Out' : 'No Speech Detected'}
+        </h3>
+        <p className="text-xs text-zinc-500 mt-2">
+          {transcript.status === 'TIMEOUT'
+            ? 'The video might be too long to process.'
+            : 'No dialogue or transcript could be identified in this video.'}
+        </p>
       </motion.div>
     );
   }

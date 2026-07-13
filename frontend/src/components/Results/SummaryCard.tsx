@@ -16,11 +16,15 @@ export default function SummaryCard() {
     );
   }
 
-  if (summary.status === 'UNIDENTIFIED' || summary.status === 'ERROR') {
+  if (summary.status === 'UNIDENTIFIED' || summary.status === 'ERROR' || summary.status === 'TIMEOUT') {
     return (
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} className="glass-card p-6 flex items-center space-x-4">
         <AlertCircle className="w-8 h-8 text-yellow-500/50" />
-        <p className="text-zinc-400">Could not generate a summary for this video.</p>
+        <p className="text-zinc-400">
+          {summary.status === 'TIMEOUT' 
+            ? 'Analysis timed out. The video might be too long.' 
+            : 'Could not generate a summary for this video.'}
+        </p>
       </motion.div>
     );
   }

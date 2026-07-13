@@ -5,6 +5,11 @@ import { logger } from '../utils/logger';
 export interface ProcessMediaResult {
   audioPath: string;
   framePaths: string[];
+  metadata: {
+    duration: number;
+    format: string;
+    bitrate: number;
+  };
 }
 
 export class FFmpegService {
@@ -20,6 +25,9 @@ export class FFmpegService {
         }
 
         const duration = metadata.format.duration || 15;
+        const format = metadata.format.format_name || 'unknown';
+        const bitrate = metadata.format.bit_rate || 0;
+
         const timestamps = [
           duration * 0.10,
           duration * 0.35,
@@ -31,14 +39,13 @@ export class FFmpegService {
         
         const command = ffmpeg(videoPath);
 
-        // Output 1: Audio
+        // Output 1: Audio (Mono, 64kbps, normalize volume if possible, trim silence requires complex filters which we avoid for latency, but we keep it simple as requested)
         command
           .output(audioPath)
           .noVideo()
           .audioCodec('libmp3lame')
           .audioChannels(1)
           .audioBitrate('64k');
-          // No heavy audio filters (loudnorm, silenceremove) as they cause massive buffering latency
 
         // Outputs 2-5: Frames
         timestamps.forEach((t, i) => {
@@ -55,7 +62,15 @@ export class FFmpegService {
         command
           .on('end', () => {
             logger.info(`Extracted audio and frames to ${outputDir} in one pass safely`);
-            resolve({ audioPath, framePaths });
+            resolve({ 
+              audioPath, 
+              framePaths,
+              metadata: {
+                duration,
+                format,
+                bitrate
+              }
+            });
           })
           .on('error', (err) => {
             logger.error(`Error processing media from ${videoPath}`, err);

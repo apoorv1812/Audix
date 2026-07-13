@@ -16,12 +16,18 @@ export default function MovieCard() {
     );
   }
 
-  if (movie.status === 'UNIDENTIFIED' || movie.status === 'ERROR') {
+  if (movie.status === 'UNIDENTIFIED' || movie.status === 'ERROR' || movie.status === 'TIMEOUT') {
     return (
       <motion.div variants={{ hidden: { opacity: 0, y: 20 }, show: { opacity: 1, y: 0 } }} className="glass-card p-6 relative overflow-hidden group h-full flex flex-col justify-center items-center text-center">
         <AlertCircle className="w-12 h-12 text-yellow-500/50 mb-4" />
-        <h3 className="font-semibold text-zinc-400">Not Identified</h3>
-        <p className="text-xs text-zinc-500 mt-2">Could not confidently identify a movie or TV show.</p>
+        <h3 className="font-semibold text-zinc-400">
+          {movie.status === 'TIMEOUT' ? 'Analysis Timed Out' : 'Not Identified'}
+        </h3>
+        <p className="text-xs text-zinc-500 mt-2">
+          {movie.status === 'TIMEOUT' 
+            ? 'The video might be too long to process in time.' 
+            : 'Could not confidently identify a movie or TV show.'}
+        </p>
       </motion.div>
     );
   }
