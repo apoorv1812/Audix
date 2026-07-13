@@ -75,20 +75,21 @@ export class PipelineService {
     } finally {
       pipelineTimes.totalPipeline = Date.now() - pipelineStartTime;
 
+      const debugRun: DebugRun = {
+        timestamp: new Date(),
+        uploadedFilename: path.basename(videoPath),
+        videoMetadata: metadata,
+        extractedAudioPath: audioPath,
+        extractedFramePaths: framePaths,
+        providerOutputs: finalResult || {},
+        pipelineTimings: pipelineTimes,
+        temporaryDirectory: tempDir,
+        cacheHit: false,
+        errors
+      };
+      debugManager.setLatestRun(debugRun);
+
       if (process.env.DEBUG_AI === 'true') {
-        const debugRun: DebugRun = {
-          timestamp: new Date(),
-          uploadedFilename: path.basename(videoPath),
-          videoMetadata: metadata,
-          extractedAudioPath: audioPath,
-          extractedFramePaths: framePaths,
-          providerOutputs: finalResult || {},
-          pipelineTimings: pipelineTimes,
-          temporaryDirectory: tempDir,
-          cacheHit: false,
-          errors
-        };
-        debugManager.setLatestRun(debugRun);
         logger.info(`[DEBUG_AI=true] Preserved temp directory ${tempDir} and saved debug run.`);
       } else {
         // Async Cleanup only if not debugging

@@ -7,7 +7,7 @@ export const getLatestDebugRun = (req: Request, res: Response) => {
   if (!latestRun) {
     return res.status(404).json({
       success: false,
-      message: 'No debug runs found. Ensure DEBUG_AI=true is set and a video has been processed.'
+      message: 'No debug runs found. Please process a video first.'
     });
   }
 
